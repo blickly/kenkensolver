@@ -1,7 +1,10 @@
 
 
 def one_full_row(n, width):
-  return row_divider(n, width, n, [])
+  return row_divider(width, [False] * n)
+
+def calculate_row_connections(n, rules, row):
+  return [is_connected_bottom(n*row+col, rules, n) for col in xrange(n)]
 
 def is_connected_bottom(square, rules, n):
   if (square + n < n*n and
@@ -10,12 +13,12 @@ def is_connected_bottom(square, rules, n):
   else:
     return False
 
-def row_divider(n, width, row, rules):
+def row_divider(width, connections):
   tile = '-' * width
   empty = ' ' * width
   result = '#'
-  for col in xrange(n):
-    if is_connected_bottom(row*n+col, rules, n):
+  for is_connected in connections:
+    if is_connected:
       result += empty
     else:
       result += tile
@@ -55,18 +58,18 @@ def square_expression(rules, square):
   rule = search_rules(rules, square)
   if rule == None:
     return ''
-  return rule[0] + str(rule[1])
+  return str(rule[1])+rule[0]
 
 def format_board(n, rules, results=[]):
   width = 12
   height = int(width/3.0+0.5)
   result = one_full_row(n, width)
-  square = 0
   for row in xrange(n):
     thisrow = ''
     for i in xrange(height):
       thisrow += '|'
       for col in xrange(n):
+        square = row*n+col
         if i == 0:
           text = square_expression(rules, square)
           thisrow += pad_to_n_left(text,width)
@@ -76,12 +79,9 @@ def format_board(n, rules, results=[]):
         else:
           thisrow += ' '*width
         thisrow += get_connector(square, rules, n)
-        if i == height-1 and col == n-1:
-          square +=n
-        square += 1
-      square -= n
       thisrow += '\n'
-    result += thisrow + row_divider(n, width, row, rules)
+    row_connections = calculate_row_connections(n, rules, row)
+    result += thisrow + row_divider(width, row_connections)
   return result
 
 ## Test code
@@ -89,6 +89,13 @@ def test_print_board():
   rules2 = [
       ('+', 5, [0,1,2]),
       ('*', 1, [3])
+      ]
+  rules3 = [
+      ('+', 5, [0,3]),
+      ('+', 3, [1,2]),
+      ('+', 3, [4]),
+      ('+', 4, [5,8]),
+      ('+', 3, [6,7]),
       ]
   rules4 = [
       ('-', 1, [0,1]),
@@ -101,6 +108,7 @@ def test_print_board():
       ]
   print format_board(2, rules2, ["You","can","write","here"])
   print format_board(4, rules4)
+  print format_board(3, rules3)
 
 if __name__ == "__main__":
   test_print_board()
